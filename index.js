@@ -107,6 +107,10 @@ app.post("/books", async (req, res) => {
     const { title, description, publicationYear, authorId, genreIds } =
         req.body;
 
+    if (!title || !description || !publicationYear || !authorId || !genreIds) {
+        return res.status(400).send("Missing required fields");
+    }
+
     try {
         // Check if author exists
         const author = await Author.findByPk(authorId);
