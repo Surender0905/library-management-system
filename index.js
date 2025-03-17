@@ -1,6 +1,7 @@
 const express = require("express");
 
 const { sequelize, Author, Book, Genre } = require("./models");
+const book = require("./models/book");
 
 const app = express();
 
@@ -138,6 +139,75 @@ app.post("/books", async (req, res) => {
     }
 });
 
+///get author
+
+app.get("/authors", async (req, res) => {
+    try {
+        const authors = await Author.findAll();
+
+        res.status(200).json(authors);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching authors" });
+    }
+});
+
+//create author
+
+app.post("/authors/new", async (req, res) => {
+    const { name, birthdate, email } = req.body;
+
+    if (!name && !birthdate && !email) {
+        return res.status(400).send("Missing required fields");
+    }
+    try {
+        const newAuthor = await Author.create({
+            name,
+            birthdate,
+            email,
+        });
+
+        console.log(newAuthor);
+
+        res.status(201).json({
+            message: "Author: Created Successfully",
+            author: newAuthor,
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error while create author" });
+    }
+});
+
+///genres/:genresId/authors
+app.get("/genres/:genresId/authors", async (req, res) => {
+    const { genresId } = req.params;
+    try {
+        const books = await Book.findAll({
+            include: {
+                model: Genre,
+                where: {
+                    id: genresId,
+                },
+            },
+            include: {
+                model: Author,
+            },
+        });
+
+        console.log(books);
+
+        const authors = books.map((book) => ({
+            authorName: book.Author.name,
+            bookTitle: book.title,
+        }));
+
+        res.status(200).json({
+            message: "author found",
+            authors: authors,
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Something went wrong" });
+    }
+});
 const PORT = process.env.PORT || 5000;
 sequelize.sync().then(() => {
     app.listen(PORT, () => {
